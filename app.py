@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_user, UserMixin
+from flask_login import LoginManager, login_user, UserMixin, logout_user, login_required
 from forms import RegisterForm, LoginForm
 
 
@@ -24,6 +24,14 @@ class User(db.Model, UserMixin):
     budget = db.Column(db.Integer(), nullable=False, default=1000)
     items = db.relationship('Item', backref='owned_user', lazy=True)
     
+    @property
+    def prettier_budget(self):
+        if len(str(self.budget)) >= 4:
+            return f'{str(self.budget)[:-3]},{str(self.budget)[-3:]}$'
+        else:
+            return f"{self.budget}$"
+        
+        
     @property
     def password(self):
         return self.password
@@ -59,6 +67,7 @@ def home_page():
 
 
 @app.route('/market')
+@login_required
 def market_page():
     items = Item.query.all()
     return render_template('market.html', items=items)
@@ -104,6 +113,15 @@ def login_page():
             flash('Username and password are not match! Please try again', category='danger')
 
     return render_template('login.html', form=form)
-    
+
+
+@app.route('/logout', methods=['GET'])
+@login_required
+def logout_page():
+    logout_user()
+    flash("You have been logged out!", category='info')
+    return redirect(url_for('home_page'))
+
+
 if __name__ == '__main__':
     app.run()
