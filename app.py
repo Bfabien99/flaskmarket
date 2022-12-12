@@ -12,6 +12,8 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager= LoginManager(app)
 login_manager.login_view = "login_page"
+login_manager.login_message_category = "info"
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -83,6 +85,11 @@ def register_page():
         try:
             db.session.add(user_to_create)
             db.session.commit()
+            
+            # log user after registration
+            login_user(user_to_create)
+            flash(f'Account created! You are now logged in as: {user_to_create.username}', category='success')
+            
             return redirect(url_for('market_page'))
         except:
             db.session.rollback()
